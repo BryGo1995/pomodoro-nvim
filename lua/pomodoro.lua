@@ -19,7 +19,8 @@ function M._format_time(seconds)
   return string.format("%02d:%02d", m, s)
 end
 
--- Exposed for testing only: reset state to defaults
+-- Exposed for testing only: reset runtime state to defaults
+-- Deliberately does NOT reset config; use _set_state({ config = {...} }) to override config in tests
 function M._reset_state()
   state.running = false
   state.is_break = false
@@ -28,8 +29,11 @@ function M._reset_state()
 end
 
 -- Exposed for testing only: merge partial state
+-- Only accepts known state keys to catch typos at test time
 function M._set_state(partial)
+  local valid_keys = { running = true, is_break = true, remaining_seconds = true, timer_handle = true, config = true }
   for k, v in pairs(partial) do
+    assert(valid_keys[k], "Unknown state key: " .. tostring(k))
     state[k] = v
   end
 end
