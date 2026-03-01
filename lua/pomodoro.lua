@@ -44,4 +44,26 @@ function M.statusline()
   return icon .. " " .. M._format_time(state.remaining_seconds)
 end
 
+local defaults = {
+  work_minutes = 25,
+  break_minutes = 5,
+}
+
+-- Exposed for testing only
+function M._get_config()
+  return state.config
+end
+
+-- Exposed for testing: accepts optional path override
+-- Without a path argument, loads from ~/.config/nvim/pomodoro.lua
+function M._load_config(path)
+  path = path or vim.fn.expand("~/.config/nvim/pomodoro.lua")
+  local ok, user_config = pcall(dofile, path)
+  if ok and type(user_config) == "table" then
+    state.config = vim.tbl_deep_extend("force", vim.deepcopy(defaults), user_config)
+  else
+    state.config = vim.deepcopy(defaults)
+  end
+end
+
 return M
