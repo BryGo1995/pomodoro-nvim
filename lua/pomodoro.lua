@@ -1,15 +1,17 @@
 local M = {}
 
+local defaults = {
+  work_minutes = 25,
+  break_minutes = 5,
+}
+
 -- Internal state
 local state = {
   running = false,
   is_break = false,
   remaining_seconds = 0,
   timer_handle = nil,
-  config = {
-    work_minutes = 25,
-    break_minutes = 5,
-  },
+  config = vim.deepcopy(defaults),
 }
 
 -- Exposed for testing only
@@ -44,11 +46,6 @@ function M.statusline()
   return icon .. " " .. M._format_time(state.remaining_seconds)
 end
 
-local defaults = {
-  work_minutes = 25,
-  break_minutes = 5,
-}
-
 -- Exposed for testing only
 function M._get_config()
   return state.config
@@ -58,6 +55,7 @@ end
 -- Without a path argument, loads from ~/.config/nvim/pomodoro.lua
 function M._load_config(path)
   path = path or vim.fn.expand("~/.config/nvim/pomodoro.lua")
+  assert(type(path) == "string", "pomodoro: config path must be a string, got " .. type(path))
   local ok, user_config = pcall(dofile, path)
   if ok and type(user_config) == "table" then
     state.config = vim.tbl_deep_extend("force", vim.deepcopy(defaults), user_config)
