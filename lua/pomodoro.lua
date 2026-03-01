@@ -24,10 +24,15 @@ end
 -- Exposed for testing only: reset runtime state to defaults
 -- Deliberately does NOT reset config; use _set_state({ config = {...} }) to override config in tests
 function M._reset_state()
+  -- stop any running libuv timer before clearing the handle reference
+  if state.timer_handle then
+    state.timer_handle:stop()
+    state.timer_handle:close()
+    state.timer_handle = nil
+  end
   state.running = false
   state.is_break = false
   state.remaining_seconds = 0
-  state.timer_handle = nil
 end
 
 -- Exposed for testing only: merge partial state
@@ -61,6 +66,89 @@ function M._load_config(path)
     state.config = vim.tbl_deep_extend("force", vim.deepcopy(defaults), user_config)
   else
     state.config = vim.deepcopy(defaults)
+  end
+end
+
+-- Exposed for testing only
+function M._get_state()
+  return state
+end
+
+-- Stop and close the libuv timer handle
+local function stop_handle()
+  if state.timer_handle then
+    state.timer_handle:stop()
+    state.timer_handle:close()
+    state.timer_handle = nil
+  end
+end
+
+-- Tick handler — called every second by the timer
+-- Exposed for testing only
+function M._tick()
+  if state.remaining_seconds > 0 then
+    state.remaining_seconds = state.remaining_seconds - 1
+  else
+    stop_handle()
+    if state.is_break then
+      state.running = false
+      state.is_break = false
+      vim.notify("Break over! Ready to focus?", vim.log.levels.INFO, { title = "Pomodoro" })
+    else
+      vim.notify("Time's up! Take a break.", vim.log.levels.INFO, { title = "Pomodoro" })
+      M._start_phase(true)
+    end
+  end
+end
+
+-- Start a timer phase. is_break=true for break, false for work.
+-- Exposed for testing (tests call this directly instead of start() to avoid
+-- spinning up a real vim.loop timer)
+function M._start_phase(is_break)
+  stop_handle()
+  state.is_break = is_break
+  state.remaining_seconds = (is_break and state.config.break_minutes or state.config.work_minutes) * 60
+  state.running = true
+
+  state.timer_handle = vim.loop.new_timer()
+  state.timer_handle:start(1000, 1000, vim.schedule_wrap(M._tick))
+end
+
+function M.start()
+  if state.running then return end
+  M._start_phase(false)
+  vim.notify(
+    "Pomodoro started! Focus for " .. state.config.work_minutes .. " minutes.",
+    vim.log.levels.INFO,
+    { title = "Pomodoro" }
+  )
+end
+
+function M.stop()
+  stop_handle()
+  state.running = false
+  state.is_break = false
+  state.remaining_seconds = 0
+end
+
+function M.skip()
+  stop_handle()
+  if state.is_break then
+    state.running = false
+    state.is_break = false
+    state.remaining_seconds = 0
+    vim.notify("Break skipped. Ready to focus?", vim.log.levels.INFO, { title = "Pomodoro" })
+  else
+    vim.notify("Work skipped. Take a break.", vim.log.levels.INFO, { title = "Pomodoro" })
+    M._start_phase(true)
+  end
+end
+
+function M.toggle()
+  if state.running then
+    M.stop()
+  else
+    M.start()
   end
 end
 
