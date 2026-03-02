@@ -118,6 +118,8 @@ end
 -- Exposed for testing (tests call this directly instead of start() to avoid
 -- spinning up a real vim.loop timer)
 function M._start_phase(phase)
+  assert(phase == "work" or phase == "break" or phase == "long_break",
+    "pomodoro: invalid phase: " .. tostring(phase))
   stop_handle()
   state._generation = state._generation + 1
   local gen = state._generation

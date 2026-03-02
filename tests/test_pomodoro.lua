@@ -127,6 +127,11 @@ describe("timer state transitions", function()
       pomodoro._start_phase("break")
       assert.equals(5 * 60, pomodoro._get_state().remaining_seconds)
     end)
+
+    it("sets remaining_seconds to long_break_minutes * 60 for long_break phase", function()
+      pomodoro._start_phase("long_break")
+      assert.equals(15 * 60, pomodoro._get_state().remaining_seconds)
+    end)
   end)
 
   describe("stop()", function()
