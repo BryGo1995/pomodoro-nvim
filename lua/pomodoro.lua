@@ -247,7 +247,15 @@ end
 function M.setup(opts)
   M._load_config()
   if opts then
-    state.config = vim.tbl_deep_extend("force", state.config, opts)
+    -- Extract internal test options before merging into config
+    local daily_file = opts._daily_file
+    opts._daily_file = nil
+    if next(opts) ~= nil then
+      state.config = vim.tbl_deep_extend("force", state.config, opts)
+    end
+    M._load_daily_count(daily_file)
+  else
+    M._load_daily_count()
   end
 
   vim.api.nvim_create_user_command("PomodoroStart",  function() M.start()  end, { force = true })

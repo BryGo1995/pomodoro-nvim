@@ -334,6 +334,15 @@ describe("setup()", function()
     pomodoro.setup()
     assert.has_no.errors(function() pomodoro.setup() end)
   end)
+
+  it("loads daily count from disk on setup", function()
+    local tmp = vim.fn.tempname() .. ".json"
+    local today = os.date("%Y-%m-%d")
+    vim.fn.writefile({ vim.fn.json_encode({ date = today, count = 9 }) }, tmp)
+    pomodoro.setup({ _daily_file = tmp })
+    assert.equals(9, pomodoro._get_state().daily_count)
+    os.remove(tmp)
+  end)
 end)
 
 describe("persistence", function()
