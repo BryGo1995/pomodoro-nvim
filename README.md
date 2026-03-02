@@ -1,4 +1,4 @@
-# pomodoro.nvim
+# pomodoro.nvim v1.1
 
 A lightweight, zero-dependency Pomodoro timer for NeoVim.
 
