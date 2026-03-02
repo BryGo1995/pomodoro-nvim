@@ -35,6 +35,8 @@ return {
 }
 ```
 
+The config file is optional — if it does not exist, defaults are used silently.
+
 Or pass options directly to `setup()` (takes precedence over config file):
 
 ```lua

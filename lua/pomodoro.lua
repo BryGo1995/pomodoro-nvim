@@ -1,4 +1,5 @@
 local M = {}
+local uv = vim.uv or vim.loop
 
 local defaults = {
   work_minutes = 25,
@@ -116,7 +117,7 @@ function M._start_phase(is_break)
   state.remaining_seconds = (is_break and state.config.break_minutes or state.config.work_minutes) * 60
   state.running = true
 
-  state.timer_handle = vim.loop.new_timer()
+  state.timer_handle = uv.new_timer()
   state.timer_handle:start(1000, 1000, vim.schedule_wrap(function()
     M._tick(gen)
   end))
@@ -140,6 +141,7 @@ function M.stop()
 end
 
 function M.skip()
+  if not state.running then return end
   stop_handle()
   if state.is_break then
     state.running = false
