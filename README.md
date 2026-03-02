@@ -17,7 +17,18 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
 {
-  "yourusername/pomodoro.nvim",
+  "BryGo1995/pomodoro-nvim",
+  config = function()
+    require("pomodoro").setup()
+  end,
+}
+```
+
+**Local path install** (for development or testing before pushing):
+
+```lua
+{
+  dir = "/path/to/pomodoro.nvim",
   config = function()
     require("pomodoro").setup()
   end,
