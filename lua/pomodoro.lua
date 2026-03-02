@@ -166,10 +166,10 @@ function M.setup(opts)
     state.config = vim.tbl_deep_extend("force", state.config, opts)
   end
 
-  vim.api.nvim_create_user_command("PomodoroStart", function() M.start() end, {})
-  vim.api.nvim_create_user_command("PomodoroStop", function() M.stop() end, {})
-  vim.api.nvim_create_user_command("PomodoroSkip", function() M.skip() end, {})
-  vim.api.nvim_create_user_command("PomodoroToggle", function() M.toggle() end, {})
+  vim.api.nvim_create_user_command("PomodoroStart",  function() M.start()  end, { force = true })
+  vim.api.nvim_create_user_command("PomodoroStop",   function() M.stop()   end, { force = true })
+  vim.api.nvim_create_user_command("PomodoroSkip",   function() M.skip()   end, { force = true })
+  vim.api.nvim_create_user_command("PomodoroToggle", function() M.toggle() end, { force = true })
 end
 
 return M
