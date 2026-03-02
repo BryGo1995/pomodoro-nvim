@@ -11,6 +11,7 @@ local state = {
   is_break = false,
   remaining_seconds = 0,
   timer_handle = nil,
+  _generation = 0,        -- incremented on each new phase; stale ticks are discarded
   config = vim.deepcopy(defaults),
 }
 
@@ -33,6 +34,7 @@ function M._reset_state()
   state.running = false
   state.is_break = false
   state.remaining_seconds = 0
+  state._generation = 0
 end
 
 -- Exposed for testing only: merge partial state
@@ -85,7 +87,9 @@ end
 
 -- Tick handler — called every second by the timer
 -- Exposed for testing only
-function M._tick()
+-- gen: the generation this tick belongs to; stale ticks from old timers are discarded
+function M._tick(gen)
+  if gen ~= state._generation then return end  -- stale tick from a stopped phase
   if state.remaining_seconds > 0 then
     state.remaining_seconds = state.remaining_seconds - 1
   else
@@ -106,12 +110,16 @@ end
 -- spinning up a real vim.loop timer)
 function M._start_phase(is_break)
   stop_handle()
+  state._generation = state._generation + 1
+  local gen = state._generation
   state.is_break = is_break
   state.remaining_seconds = (is_break and state.config.break_minutes or state.config.work_minutes) * 60
   state.running = true
 
   state.timer_handle = vim.loop.new_timer()
-  state.timer_handle:start(1000, 1000, vim.schedule_wrap(M._tick))
+  state.timer_handle:start(1000, 1000, vim.schedule_wrap(function()
+    M._tick(gen)
+  end))
 end
 
 function M.start()

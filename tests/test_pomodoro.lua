@@ -131,19 +131,42 @@ describe("timer state transitions", function()
       pomodoro.stop()
       assert.equals(0, pomodoro._get_state().remaining_seconds)
     end)
+
+    it("resets is_break to false", function()
+      pomodoro._set_state({ running = true, is_break = true, remaining_seconds = 100 })
+      pomodoro.stop()
+      assert.is_false(pomodoro._get_state().is_break)
+    end)
   end)
 
   describe("tick()", function()
     it("decrements remaining_seconds by 1", function()
       pomodoro._set_state({ running = true, is_break = false, remaining_seconds = 100 })
-      pomodoro._tick()
+      pomodoro._tick(0)  -- gen=0 since _reset_state resets _generation to 0
       assert.equals(99, pomodoro._get_state().remaining_seconds)
     end)
 
     it("does not go below 0", function()
       pomodoro._set_state({ running = true, is_break = false, remaining_seconds = 0 })
-      pomodoro._tick()
+      pomodoro._tick(0)  -- gen=0 since _reset_state resets _generation to 0
       assert.is_true(pomodoro._get_state().remaining_seconds >= 0)
+    end)
+
+    it("when remaining_seconds is 0 and in work phase, starts a break", function()
+      pomodoro._set_state({ running = true, is_break = false, remaining_seconds = 0 })
+      pomodoro._tick(0)  -- gen=0 since _reset_state resets _generation to 0
+      local s = pomodoro._get_state()
+      assert.is_true(s.is_break)
+      assert.is_true(s.running)
+      assert.equals(5 * 60, s.remaining_seconds)
+    end)
+
+    it("when remaining_seconds is 0 and in break phase, stops the timer", function()
+      pomodoro._set_state({ running = true, is_break = true, remaining_seconds = 0 })
+      pomodoro._tick(0)  -- gen=0 since _reset_state resets _generation to 0
+      local s = pomodoro._get_state()
+      assert.is_false(s.running)
+      assert.is_false(s.is_break)
     end)
   end)
 
@@ -167,6 +190,12 @@ describe("timer state transitions", function()
       pomodoro._set_state({ running = true, is_break = false, remaining_seconds = 500 })
       pomodoro.toggle()
       assert.is_false(pomodoro._get_state().running)
+    end)
+
+    it("starts when not running", function()
+      pomodoro._reset_state()
+      pomodoro.toggle()
+      assert.is_true(pomodoro._get_state().running)
     end)
   end)
 end)
