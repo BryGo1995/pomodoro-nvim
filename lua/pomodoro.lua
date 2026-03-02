@@ -249,9 +249,10 @@ function M.setup(opts)
   if opts then
     -- Extract internal test options before merging into config
     local daily_file = opts._daily_file
-    opts._daily_file = nil
-    if next(opts) ~= nil then
-      state.config = vim.tbl_deep_extend("force", state.config, opts)
+    local config_opts = vim.tbl_extend("keep", {}, opts)
+    config_opts._daily_file = nil
+    if next(config_opts) ~= nil then
+      state.config = vim.tbl_deep_extend("force", state.config, config_opts)
     end
     M._load_daily_count(daily_file)
   else
