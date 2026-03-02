@@ -56,10 +56,29 @@ function M._set_state(partial)
   end
 end
 
+-- Build dot progress string: ● for completed, ○ for remaining
+local function make_dots(count, interval)
+  local dots = ""
+  for i = 1, interval do
+    dots = dots .. (i <= count and "●" or "○")
+  end
+  return dots
+end
+
 function M.statusline()
   if not state.running then return "" end
-  local icon = (state.phase == "break" or state.phase == "long_break") and "☕" or "🍅"
-  return icon .. " " .. M._format_time(state.remaining_seconds)
+  local count = "×" .. state.daily_count
+  local time  = M._format_time(state.remaining_seconds)
+  if state.phase == "work" then
+    local dots = make_dots(state.set_count, state.config.long_break_interval)
+    return "🍅" .. count .. " " .. dots .. " " .. time
+  elseif state.phase == "break" then
+    local dots = make_dots(state.set_count, state.config.long_break_interval)
+    return "☕" .. count .. " " .. dots .. " " .. time
+  elseif state.phase == "long_break" then
+    return "🌙" .. count .. " " .. time
+  end
+  return ""
 end
 
 -- Exposed for testing only
