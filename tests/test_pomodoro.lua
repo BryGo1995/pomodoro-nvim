@@ -58,6 +58,20 @@ describe("statusline", function()
     pomodoro._reset_state()
     assert.equals("", pomodoro.statusline())
   end)
+
+  it("shows filled dots during break phase for completed sessions", function()
+    pomodoro._set_state({ running = true, phase = "break", remaining_seconds = 300, set_count = 2, daily_count = 3 })
+    assert.equals("☕×3 ●●○○ 05:00", pomodoro.statusline())
+  end)
+
+  it("dot count respects long_break_interval config", function()
+    pomodoro._set_state({
+      running = true, phase = "work",
+      remaining_seconds = 1500, set_count = 1, daily_count = 1,
+      config = { work_minutes = 25, break_minutes = 5, long_break_minutes = 15, long_break_interval = 3 }
+    })
+    assert.equals("🍅×1 ●○○ 25:00", pomodoro.statusline())
+  end)
 end)
 
 describe("load_config", function()
