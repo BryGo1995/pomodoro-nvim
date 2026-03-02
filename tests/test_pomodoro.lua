@@ -89,6 +89,16 @@ describe("load_config", function()
     assert.equals(5, pomodoro._get_config().break_minutes)
     os.remove(tmp)
   end)
+
+  it("has default long_break_minutes of 15", function()
+    pomodoro._load_config("/nonexistent/path/reset")
+    assert.equals(15, pomodoro._get_config().long_break_minutes)
+  end)
+
+  it("has default long_break_interval of 4", function()
+    pomodoro._load_config("/nonexistent/path/reset")
+    assert.equals(4, pomodoro._get_config().long_break_interval)
+  end)
 end)
 
 describe("timer state transitions", function()

@@ -2,8 +2,10 @@ local M = {}
 local uv = vim.uv or vim.loop
 
 local defaults = {
-  work_minutes = 25,
-  break_minutes = 5,
+  work_minutes        = 25,
+  break_minutes       = 5,
+  long_break_minutes  = 15,
+  long_break_interval = 4,
 }
 
 -- Internal state
