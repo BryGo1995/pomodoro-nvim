@@ -10,12 +10,14 @@ local defaults = {
 
 -- Internal state
 local state = {
-  running = false,
-  is_break = false,
+  phase             = "idle",   -- "idle" | "work" | "break" | "long_break"
+  running           = false,
   remaining_seconds = 0,
-  timer_handle = nil,
-  _generation = 0,        -- incremented on each new phase; stale ticks are discarded
-  config = vim.deepcopy(defaults),
+  timer_handle      = nil,
+  _generation       = 0,        -- incremented on each new phase; stale ticks are discarded
+  set_count         = 0,        -- pomodoros completed in current set
+  daily_count       = 0,        -- total pomodoros today
+  config            = vim.deepcopy(defaults),
 }
 
 -- Exposed for testing only
@@ -28,22 +30,26 @@ end
 -- Exposed for testing only: reset runtime state to defaults
 -- Deliberately does NOT reset config; use _set_state({ config = {...} }) to override config in tests
 function M._reset_state()
-  -- stop any running libuv timer before clearing the handle reference
   if state.timer_handle then
     state.timer_handle:stop()
     state.timer_handle:close()
     state.timer_handle = nil
   end
+  state.phase = "idle"
   state.running = false
-  state.is_break = false
   state.remaining_seconds = 0
   state._generation = 0
+  state.set_count = 0
+  state.daily_count = 0
 end
 
 -- Exposed for testing only: merge partial state
 -- Only accepts known state keys to catch typos at test time
 function M._set_state(partial)
-  local valid_keys = { running = true, is_break = true, remaining_seconds = true, timer_handle = true, config = true }
+  local valid_keys = {
+    phase = true, running = true, remaining_seconds = true,
+    timer_handle = true, config = true, set_count = true, daily_count = true,
+  }
   for k, v in pairs(partial) do
     assert(valid_keys[k], "Unknown state key: " .. tostring(k))
     state[k] = v
@@ -52,7 +58,7 @@ end
 
 function M.statusline()
   if not state.running then return "" end
-  local icon = state.is_break and "☕" or "🍅"
+  local icon = (state.phase == "break" or state.phase == "long_break") and "☕" or "🍅"
   return icon .. " " .. M._format_time(state.remaining_seconds)
 end
 
@@ -97,26 +103,31 @@ function M._tick(gen)
     state.remaining_seconds = state.remaining_seconds - 1
   else
     stop_handle()
-    if state.is_break then
-      state.running = false
-      state.is_break = false
-      vim.notify("Break over! Ready to focus?", vim.log.levels.INFO, { title = "Pomodoro" })
-    else
+    if state.phase == "work" then
       vim.notify("Time's up! Take a break.", vim.log.levels.INFO, { title = "Pomodoro" })
-      M._start_phase(true)
+      M._start_phase("break")
+    else
+      state.running = false
+      state.phase = "idle"
+      vim.notify("Break over! Ready to focus?", vim.log.levels.INFO, { title = "Pomodoro" })
     end
   end
 end
 
--- Start a timer phase. is_break=true for break, false for work.
+-- Start a timer phase. phase = "work" | "break" | "long_break"
 -- Exposed for testing (tests call this directly instead of start() to avoid
 -- spinning up a real vim.loop timer)
-function M._start_phase(is_break)
+function M._start_phase(phase)
   stop_handle()
   state._generation = state._generation + 1
   local gen = state._generation
-  state.is_break = is_break
-  state.remaining_seconds = (is_break and state.config.break_minutes or state.config.work_minutes) * 60
+  state.phase = phase
+  local duration_map = {
+    work       = state.config.work_minutes,
+    ["break"]  = state.config.break_minutes,
+    long_break = state.config.long_break_minutes,
+  }
+  state.remaining_seconds = (duration_map[phase] or state.config.work_minutes) * 60
   state.running = true
 
   state.timer_handle = uv.new_timer()
@@ -127,7 +138,7 @@ end
 
 function M.start()
   if state.running then return end
-  M._start_phase(false)
+  M._start_phase("work")
   vim.notify(
     "Pomodoro started! Focus for " .. state.config.work_minutes .. " minutes.",
     vim.log.levels.INFO,
@@ -138,21 +149,21 @@ end
 function M.stop()
   stop_handle()
   state.running = false
-  state.is_break = false
+  state.phase = "idle"
   state.remaining_seconds = 0
 end
 
 function M.skip()
   if not state.running then return end
   stop_handle()
-  if state.is_break then
+  if state.phase == "work" then
+    vim.notify("Work skipped. Take a break.", vim.log.levels.INFO, { title = "Pomodoro" })
+    M._start_phase("break")
+  else
     state.running = false
-    state.is_break = false
+    state.phase = "idle"
     state.remaining_seconds = 0
     vim.notify("Break skipped. Ready to focus?", vim.log.levels.INFO, { title = "Pomodoro" })
-  else
-    vim.notify("Work skipped. Take a break.", vim.log.levels.INFO, { title = "Pomodoro" })
-    M._start_phase(true)
   end
 end
 
