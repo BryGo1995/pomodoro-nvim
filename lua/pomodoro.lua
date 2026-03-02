@@ -43,6 +43,30 @@ function M._reset_state()
   state.daily_count = 0
 end
 
+-- Path to the daily count persistence file
+local function daily_file_path()
+  return vim.fn.stdpath("data") .. "/pomodoro-daily.json"
+end
+
+-- Exposed for testing: accepts optional path override
+function M._save_daily_count(path)
+  path = path or daily_file_path()
+  local data = vim.fn.json_encode({ date = os.date("%Y-%m-%d"), count = state.daily_count })
+  vim.fn.writefile({ data }, path)
+end
+
+-- Exposed for testing: accepts optional path override
+function M._load_daily_count(path)
+  path = path or daily_file_path()
+  local ok, lines = pcall(vim.fn.readfile, path)
+  if not ok or #lines == 0 then return end
+  local ok2, data = pcall(vim.fn.json_decode, lines[1])
+  if not ok2 or type(data) ~= "table" then return end
+  if data.date == os.date("%Y-%m-%d") and type(data.count) == "number" then
+    state.daily_count = data.count
+  end
+end
+
 -- Exposed for testing only: merge partial state
 -- Only accepts known state keys to catch typos at test time
 function M._set_state(partial)
@@ -125,6 +149,7 @@ function M._tick(gen)
     if state.phase == "work" then
       state.set_count = state.set_count + 1
       state.daily_count = state.daily_count + 1
+      M._save_daily_count()          -- persist after each completed pomodoro
       if state.set_count >= state.config.long_break_interval then
         state.set_count = 0
         vim.notify("Time's up! Take a long break.", vim.log.levels.INFO, { title = "Pomodoro" })

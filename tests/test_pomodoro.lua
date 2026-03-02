@@ -335,3 +335,49 @@ describe("setup()", function()
     assert.has_no.errors(function() pomodoro.setup() end)
   end)
 end)
+
+describe("persistence", function()
+  local tmp_path
+
+  before_each(function()
+    pomodoro._reset_state()
+    tmp_path = vim.fn.tempname() .. ".json"
+  end)
+
+  after_each(function()
+    os.remove(tmp_path)
+  end)
+
+  it("_save_daily_count writes date and count to file", function()
+    pomodoro._set_state({ daily_count = 7 })
+    pomodoro._save_daily_count(tmp_path)
+    local lines = vim.fn.readfile(tmp_path)
+    local data = vim.fn.json_decode(lines[1])
+    assert.equals(os.date("%Y-%m-%d"), data.date)
+    assert.equals(7, data.count)
+  end)
+
+  it("_load_daily_count restores count when date matches today", function()
+    local today = os.date("%Y-%m-%d")
+    vim.fn.writefile({ vim.fn.json_encode({ date = today, count = 12 }) }, tmp_path)
+    pomodoro._load_daily_count(tmp_path)
+    assert.equals(12, pomodoro._get_state().daily_count)
+  end)
+
+  it("_load_daily_count resets count when stored date is different", function()
+    vim.fn.writefile({ vim.fn.json_encode({ date = "2020-01-01", count = 12 }) }, tmp_path)
+    pomodoro._load_daily_count(tmp_path)
+    assert.equals(0, pomodoro._get_state().daily_count)
+  end)
+
+  it("_load_daily_count gracefully handles missing file", function()
+    pomodoro._load_daily_count("/nonexistent/path.json")
+    assert.equals(0, pomodoro._get_state().daily_count)
+  end)
+
+  it("_load_daily_count gracefully handles malformed file", function()
+    vim.fn.writefile({ "not json" }, tmp_path)
+    pomodoro._load_daily_count(tmp_path)
+    assert.equals(0, pomodoro._get_state().daily_count)
+  end)
+end)
