@@ -91,6 +91,12 @@ The daily count (`×7`) persists across NeoVim sessions and resets at midnight.
 | `:PomodoroSkip` | Skip to the next phase |
 | `:PomodoroToggle` | Start if stopped, stop if running |
 
+## Behaviour
+
+- Completed work sessions increment both the daily count and the set progress (dots).
+- **Skipped** work sessions (`PomodoroSkip`) do not increment the daily count or advance the dot progress. However, skipping at the last session in a set (e.g. session 4 of 4) will still trigger a long break.
+- The daily count persists across NeoVim restarts and resets automatically at midnight.
+
 ## Suggested Keymaps
 
 Add to your NeoVim config (optional):
