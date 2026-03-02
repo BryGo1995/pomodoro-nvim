@@ -41,8 +41,10 @@ Create `~/.config/nvim/pomodoro.lua`:
 
 ```lua
 return {
-  work_minutes = 25,  -- default: 25
-  break_minutes = 5,  -- default: 5
+  work_minutes        = 25,  -- default: 25
+  break_minutes       = 5,   -- default: 5
+  long_break_minutes  = 15,  -- default: 15
+  long_break_interval = 4,   -- default: 4 (long break after every N sessions)
 }
 ```
 
@@ -69,8 +71,16 @@ require("lualine").setup({
 })
 ```
 
-The statusline shows `🍅 MM:SS` during work and `☕ MM:SS` during breaks.
-It is empty when the timer is stopped.
+The statusline format:
+
+| Phase | Example | Description |
+|---|---|---|
+| Work | `🍅×7 ●●○○ 24:30` | daily count, set progress dots, countdown |
+| Short break | `☕×7 ●●○○ 04:30` | |
+| Long break | `🌙×7 14:30` | no dots — set just reset |
+| Stopped | _(empty)_ | |
+
+The daily count (`×7`) persists across NeoVim sessions and resets at midnight.
 
 ## Commands
 
