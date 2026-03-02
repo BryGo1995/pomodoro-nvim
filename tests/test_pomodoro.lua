@@ -175,7 +175,8 @@ describe("timer state transitions", function()
     end)
 
     it("when work hits 0 and set_count < interval: starts short break", function()
-      pomodoro._set_state({ running = true, phase = "work", remaining_seconds = 0, set_count = 0 })
+      -- set_count = 2, interval = 4: post-increment = 3, check is 3 >= 4 → false → short break
+      pomodoro._set_state({ running = true, phase = "work", remaining_seconds = 0, set_count = 2 })
       pomodoro._tick(0)
       local s = pomodoro._get_state()
       assert.equals("break", s.phase)
