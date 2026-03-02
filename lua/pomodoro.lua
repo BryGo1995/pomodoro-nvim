@@ -104,9 +104,18 @@ function M._tick(gen)
   else
     stop_handle()
     if state.phase == "work" then
-      vim.notify("Time's up! Take a break.", vim.log.levels.INFO, { title = "Pomodoro" })
-      M._start_phase("break")
+      state.set_count = state.set_count + 1
+      state.daily_count = state.daily_count + 1
+      if state.set_count >= state.config.long_break_interval then
+        state.set_count = 0
+        vim.notify("Time's up! Take a long break.", vim.log.levels.INFO, { title = "Pomodoro" })
+        M._start_phase("long_break")
+      else
+        vim.notify("Time's up! Take a break.", vim.log.levels.INFO, { title = "Pomodoro" })
+        M._start_phase("break")
+      end
     else
+      -- break or long_break finished
       state.running = false
       state.phase = "idle"
       vim.notify("Break over! Ready to focus?", vim.log.levels.INFO, { title = "Pomodoro" })
