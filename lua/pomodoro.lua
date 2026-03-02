@@ -168,9 +168,18 @@ function M.skip()
   if not state.running then return end
   stop_handle()
   if state.phase == "work" then
-    vim.notify("Work skipped. Take a break.", vim.log.levels.INFO, { title = "Pomodoro" })
-    M._start_phase("break")
+    -- Apply same break decision as _tick would (without incrementing counters)
+    local would_be = state.set_count + 1
+    if would_be >= state.config.long_break_interval then
+      state.set_count = 0
+      vim.notify("Work skipped. Take a long break.", vim.log.levels.INFO, { title = "Pomodoro" })
+      M._start_phase("long_break")
+    else
+      vim.notify("Work skipped. Take a break.", vim.log.levels.INFO, { title = "Pomodoro" })
+      M._start_phase("break")
+    end
   else
+    -- break or long_break → back to idle
     state.running = false
     state.phase = "idle"
     state.remaining_seconds = 0
