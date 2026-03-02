@@ -52,7 +52,10 @@ end
 function M._save_daily_count(path)
   path = path or daily_file_path()
   local data = vim.fn.json_encode({ date = os.date("%Y-%m-%d"), count = state.daily_count })
-  vim.fn.writefile({ data }, path)
+  local ok = pcall(vim.fn.writefile, { data }, path)
+  if not ok then
+    vim.notify("pomodoro: could not save daily count", vim.log.levels.WARN, { title = "Pomodoro" })
+  end
 end
 
 -- Exposed for testing: accepts optional path override
