@@ -217,6 +217,7 @@ describe("timer state transitions", function()
       pomodoro.skip()
       assert.equals("break", pomodoro._get_state().phase)
       assert.is_true(pomodoro._get_state().running)
+      assert.equals(0, pomodoro._get_state().daily_count)  -- skip does not count as completed pomodoro
     end)
 
     it("during break phase stops timer", function()
@@ -239,6 +240,7 @@ describe("timer state transitions", function()
       assert.equals("long_break", pomodoro._get_state().phase)
       assert.is_true(pomodoro._get_state().running)
       assert.equals(0, pomodoro._get_state().set_count)
+      assert.equals(0, pomodoro._get_state().daily_count)  -- skip does not count as completed pomodoro
     end)
 
     it("during long_break phase: stops timer and sets phase to idle", function()

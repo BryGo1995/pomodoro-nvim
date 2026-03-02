@@ -168,7 +168,9 @@ function M.skip()
   if not state.running then return end
   stop_handle()
   if state.phase == "work" then
-    -- Apply same break decision as _tick would (without incrementing counters)
+    -- Decide break type the same way _tick would.
+    -- Skipping is NOT counted as a completed pomodoro:
+    -- daily_count and set_count do NOT increment on skip.
     local would_be = state.set_count + 1
     if would_be >= state.config.long_break_interval then
       state.set_count = 0
